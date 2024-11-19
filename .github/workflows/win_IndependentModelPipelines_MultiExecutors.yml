@@ -1493,6 +1493,25 @@ jobs:
             |
             derived
             03_Code
+            PA_Results/AHRS_Voter/bug_finder
+            PA_Results/AHRS_Voter/code_prover
+            PA_Results/AHRS_Voter/external_code_cache
+            PA_Results/AHRS_Voter/metrics
+            PA_Results/Actuator_Control/bug_finder
+            PA_Results/Actuator_Control/code_prover
+            PA_Results/Actuator_Control/external_code_cache
+            PA_Results/Actuator_Control/metrics
+            PA_Results/InnerLoop_Control/bug_finder
+            PA_Results/InnerLoop_Control/code_prover
+            PA_Results/InnerLoop_Control/external_code_cache
+            PA_Results/InnerLoop_Control/metrics
+            PA_Results/OuterLoop_Control/bug_finder
+            PA_Results/OuterLoop_Control/code_prover
+            PA_Results/OuterLoop_Control/external_code_cache
+            PA_Results/OuterLoop_Control/metrics
+            PA_Results/bug_finder
+            PA_Results/code_prover
+            PA_Results/test_results
 
           retention-days:
             30
