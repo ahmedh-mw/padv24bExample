@@ -1,0 +1,1703 @@
+name:
+  win_IndependentModelPipelines_MultiExecutors
+
+on:
+  workflow_dispatch:
+
+permissions:
+  checks:
+    write
+
+  contents:
+    read
+
+
+env:
+  PATH_TO_MATLAB:
+    ${{ vars.PATH_TO_MATLAB }}
+
+
+jobs:
+  Create_Base_Artifact_Database:
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);padv.util.saveArtifactDatabase('derived/dmrs/base.dmr');" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+          path:
+            |
+            derived
+            03_Code
+            PA_Results/AHRS_Voter/bug_finder
+            PA_Results/AHRS_Voter/code_prover
+            PA_Results/AHRS_Voter/external_code_cache
+            PA_Results/AHRS_Voter/metrics
+            PA_Results/Actuator_Control/bug_finder
+            PA_Results/Actuator_Control/code_prover
+            PA_Results/Actuator_Control/external_code_cache
+            PA_Results/Actuator_Control/metrics
+            PA_Results/InnerLoop_Control/bug_finder
+            PA_Results/InnerLoop_Control/code_prover
+            PA_Results/InnerLoop_Control/external_code_cache
+            PA_Results/InnerLoop_Control/metrics
+            PA_Results/OuterLoop_Control/bug_finder
+            PA_Results/OuterLoop_Control/code_prover
+            PA_Results/OuterLoop_Control/external_code_cache
+            PA_Results/OuterLoop_Control/metrics
+            PA_Results/bug_finder
+            PA_Results/code_prover
+            PA_Results/test_results
+
+          retention-days:
+            30
+
+
+
+
+  Run_Tests__AHRS_Voter:
+    needs:
+      Create_Base_Artifact_Database
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.RunTestsPerTestCase|sl_test_case|ProcessAdvisorExample|02_Models/AHRS_Voter/test_cases/AHRS_Voter_REQ_Based_Test.mldatx|ced877ff-cfb8-4fa8-9bbf-aaa29b1d926b', 'padv.builtin.task.RunTestsPerTestCase|sl_test_case|ProcessAdvisorExample|02_Models/AHRS_Voter/test_cases/AHRS_Voter_REQ_Based_Test.mldatx|d3a72cc8-687b-44ae-a909-7eff803b455b', 'padv.builtin.task.RunTestsPerTestCase|sl_test_case|ProcessAdvisorExample|02_Models/AHRS_Voter/test_cases/AHRS_Voter_REQ_Based_Test.mldatx|74194125-b632-41a1-b96d-b3364441277f'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/test_results
+
+          retention-days:
+            30
+
+
+
+
+  Merge_Test_Results__AHRS_Voter:
+    needs:
+      Run_Tests__AHRS_Voter
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.MergeTestResults|sl_model_file|ProcessAdvisorExample|02_Models/AHRS_Voter/specification/AHRS_Voter.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/test_results
+
+          retention-days:
+            30
+
+
+
+
+  Collect_Model_Testing_Metrics__AHRS_Voter:
+    needs:
+      Merge_Test_Results__AHRS_Voter
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'ModelTestingMetrics|sl_model_file|ProcessAdvisorExample|02_Models/AHRS_Voter/specification/AHRS_Voter.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/AHRS_Voter/metrics
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Generation__AHRS_Voter:
+    needs:
+      Collect_Model_Testing_Metrics__AHRS_Voter
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.GenerateCode|sl_model_file|ProcessAdvisorExample|02_Models/AHRS_Voter/specification/AHRS_Voter.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/AHRS_Voter/external_code_cache
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Analysis__AHRS_Voter:
+    needs:
+      Reference_Model_Code_Generation__AHRS_Voter
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'Reference Model Code Analysis|sl_model_file|ProcessAdvisorExample|02_Models/AHRS_Voter/specification/AHRS_Voter.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/AHRS_Voter/bug_finder
+
+          retention-days:
+            30
+
+
+
+
+  Ref_Model_Code_Proving__AHRS_Voter:
+    needs:
+      Reference_Model_Code_Analysis__AHRS_Voter
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'RefProveCodeQuality|sl_model_file|ProcessAdvisorExample|02_Models/AHRS_Voter/specification/AHRS_Voter.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);padv.util.saveArtifactDatabase('derived/dmrs/AHRS_Voter.dmr');" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/AHRS_Voter/code_prover
+
+          retention-days:
+            30
+
+
+
+
+  Collect_Model_Testing_Metrics__Actuator_Control:
+    needs:
+      Create_Base_Artifact_Database
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'ModelTestingMetrics|sl_model_file|ProcessAdvisorExample|02_Models/Actuator_Control/specification/Actuator_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/Actuator_Control/metrics
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Generation__Actuator_Control:
+    needs:
+      Collect_Model_Testing_Metrics__Actuator_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.GenerateCode|sl_model_file|ProcessAdvisorExample|02_Models/Actuator_Control/specification/Actuator_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/Actuator_Control/external_code_cache
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Analysis__Actuator_Control:
+    needs:
+      Reference_Model_Code_Generation__Actuator_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'Reference Model Code Analysis|sl_model_file|ProcessAdvisorExample|02_Models/Actuator_Control/specification/Actuator_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/Actuator_Control/bug_finder
+
+          retention-days:
+            30
+
+
+
+
+  Ref_Model_Code_Proving__Actuator_Control:
+    needs:
+      Reference_Model_Code_Analysis__Actuator_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'RefProveCodeQuality|sl_model_file|ProcessAdvisorExample|02_Models/Actuator_Control/specification/Actuator_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);padv.util.saveArtifactDatabase('derived/dmrs/Actuator_Control.dmr');" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/Actuator_Control/code_prover
+
+          retention-days:
+            30
+
+
+
+
+  Collect_Model_Testing_Metrics__InnerLoop_Control:
+    needs:
+      Create_Base_Artifact_Database
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'ModelTestingMetrics|sl_model_file|ProcessAdvisorExample|02_Models/InnerLoop_Control/specification/InnerLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/InnerLoop_Control/metrics
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Generation__InnerLoop_Control:
+    needs:
+      Collect_Model_Testing_Metrics__InnerLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.GenerateCode|sl_model_file|ProcessAdvisorExample|02_Models/InnerLoop_Control/specification/InnerLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/InnerLoop_Control/external_code_cache
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Analysis__InnerLoop_Control:
+    needs:
+      Reference_Model_Code_Generation__InnerLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'Reference Model Code Analysis|sl_model_file|ProcessAdvisorExample|02_Models/InnerLoop_Control/specification/InnerLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/InnerLoop_Control/bug_finder
+
+          retention-days:
+            30
+
+
+
+
+  Ref_Model_Code_Proving__InnerLoop_Control:
+    needs:
+      Reference_Model_Code_Analysis__InnerLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'RefProveCodeQuality|sl_model_file|ProcessAdvisorExample|02_Models/InnerLoop_Control/specification/InnerLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);padv.util.saveArtifactDatabase('derived/dmrs/InnerLoop_Control.dmr');" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/InnerLoop_Control/code_prover
+
+          retention-days:
+            30
+
+
+
+
+  Run_Tests__OuterLoop_Control:
+    needs:
+      Create_Base_Artifact_Database
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.RunTestsPerTestCase|sl_test_case|ProcessAdvisorExample|02_Models/OuterLoop_Control/test_cases/OuterLoop_Control_REQ_Based_Test.mldatx|862932e4-be44-4f66-9abe-fb313da73c0d', 'padv.builtin.task.RunTestsPerTestCase|sl_test_case|ProcessAdvisorExample|02_Models/OuterLoop_Control/test_cases/OuterLoop_Control_REQ_Based_Test.mldatx|70d344b2-d65f-4872-9e4b-cef338e618a5', 'padv.builtin.task.RunTestsPerTestCase|sl_test_case|ProcessAdvisorExample|02_Models/OuterLoop_Control/test_cases/OuterLoop_Control_REQ_Based_Test.mldatx|51b0cb29-34f5-4c04-9104-4f3b0b48dda9'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/test_results
+
+          retention-days:
+            30
+
+
+
+
+  Merge_Test_Results__OuterLoop_Control:
+    needs:
+      Run_Tests__OuterLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.MergeTestResults|sl_model_file|ProcessAdvisorExample|02_Models/OuterLoop_Control/specification/OuterLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/test_results
+
+          retention-days:
+            30
+
+
+
+
+  Collect_Model_Testing_Metrics__OuterLoop_Control:
+    needs:
+      Merge_Test_Results__OuterLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'ModelTestingMetrics|sl_model_file|ProcessAdvisorExample|02_Models/OuterLoop_Control/specification/OuterLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/OuterLoop_Control/metrics
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Generation__OuterLoop_Control:
+    needs:
+      Collect_Model_Testing_Metrics__OuterLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'padv.builtin.task.GenerateCode|sl_model_file|ProcessAdvisorExample|02_Models/OuterLoop_Control/specification/OuterLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/OuterLoop_Control/external_code_cache
+
+          retention-days:
+            30
+
+
+
+
+  Reference_Model_Code_Analysis__OuterLoop_Control:
+    needs:
+      Reference_Model_Code_Generation__OuterLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'Reference Model Code Analysis|sl_model_file|ProcessAdvisorExample|02_Models/OuterLoop_Control/specification/OuterLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/OuterLoop_Control/bug_finder
+
+          retention-days:
+            30
+
+
+
+
+  Ref_Model_Code_Proving__OuterLoop_Control:
+    needs:
+      Reference_Model_Code_Analysis__OuterLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'RefProveCodeQuality|sl_model_file|ProcessAdvisorExample|02_Models/OuterLoop_Control/specification/OuterLoop_Control.slx'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);padv.util.saveArtifactDatabase('derived/dmrs/OuterLoop_Control.dmr');" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/OuterLoop_Control/code_prover
+
+          retention-days:
+            30
+
+
+
+
+  Top_Model_Code_Generation:
+    needs:
+      - Ref_Model_Code_Proving__AHRS_Voter
+      - Ref_Model_Code_Proving__Actuator_Control
+      - Ref_Model_Code_Proving__InnerLoop_Control
+      - Ref_Model_Code_Proving__OuterLoop_Control
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            AHRS_Voter_padv_artifacts
+
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            Actuator_Control_padv_artifacts
+
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            InnerLoop_Control_padv_artifacts
+
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            OuterLoop_Control_padv_artifacts
+
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);padv.util.mergeArtifactDatabases('Base', 'derived/dmrs/base.dmr', 'Branches', {'derived/dmrs/AHRS_Voter.dmr', 'derived/dmrs/Actuator_Control.dmr', 'derived/dmrs/InnerLoop_Control.dmr', 'derived/dmrs/OuterLoop_Control.dmr'}, 'Merged', 'derived/artifacts.dmr', 'CheckOutdatedResults', true);[~,exitCode] = runprocess(Tasks = {'Top Model Code Generation|project|ProcessAdvisorExample|ProcessAdvisorExample.prj'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+          path:
+            |
+            derived
+            03_Code
+
+          retention-days:
+            30
+
+
+
+
+  Top_Model_Code_Analysis:
+    needs:
+      Top_Model_Code_Generation
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'Top Model Code Analysis|project|ProcessAdvisorExample|ProcessAdvisorExample.prj'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/bug_finder
+
+          retention-days:
+            30
+
+
+
+
+  Top_Model_Code_Proving:
+    needs:
+      Top_Model_Code_Analysis
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Launch MATLAB
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);[~,exitCode] = runprocess(Tasks = {'TopProveCodeQuality|project|ProcessAdvisorExample|ProcessAdvisorExample.prj'}, Process = 'CIPipeline', Force = false, ExitInBatchMode = false, RerunFailedTasks = false, RerunErroredTasks = false, GenerateJUnitForProcess = true);" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+          path:
+            |
+            derived
+            PA_Results/code_prover
+
+          retention-days:
+            30
+
+
+
+
+  Generate_PADV_Report:
+    if:
+      ${{ !cancelled() }}
+
+    needs:
+      Top_Model_Code_Proving
+
+    runs-on:
+      padv_win_agents
+
+    steps:
+      - name:
+          Checkout Repository
+
+        uses:
+          actions/checkout@v3
+
+      - name:
+          Download Artifacts
+
+        uses:
+          actions/download-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+
+      - name:
+          Setup MATLAB
+
+        run:
+          echo "${{ env.PATH_TO_MATLAB }}" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name:
+          Generate PADV Report
+
+        run:
+          >
+          matlab 
+          -nodesktop 
+          -logfile output.log 
+          -batch "openProject(pwd);
+          rptObj=padv.ProcessAdvisorReportGenerator(Process = 'CIPipeline', Format='pdf', OutputPath=fullfile(currentProject().RootFolder,'ProcessAdvisorReport'));
+          rptObj.generateReport();" 
+
+      - name:
+          Upload Artifacts
+
+        if:
+          ${{ !cancelled() }}
+
+        uses:
+          actions/upload-artifact@v3
+
+        with:
+          name:
+            _padv_artifacts
+
+          path:
+            |
+            derived
+            ProcessAdvisorReport.pdf
+
+          retention-days:
+            30
+
+
+
+
+
